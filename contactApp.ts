@@ -24,10 +24,9 @@ class Contact {
     this.fileManager = new FileManager(fileName);
     let backupData = this.fileManager.loadData();
     let backUpDataValues = Object.values(backupData);
-    console.log("contacts before", this.contacts);
 
     for (let value of backUpDataValues) [this.contacts.push(value)];
-    console.log("contacts after", this.contacts);
+    console.log("contacts from file\n", this.contacts);
   }
 
   private findEmailIndex(key: string): number {
@@ -63,9 +62,11 @@ class Contact {
       ? this.findEmailIndex(contact.email)
       : -1;
     let phoneNoIndex: number = this.findPhoneNoIndex(contact.phoneNo);
-    if (phoneNoIndex === -1 || emailIndex === -1) {
+    if (phoneNoIndex === -1 && emailIndex === -1) {
       this.contacts.push(contact);
-      this.fileManager.appendData(this.contacts);
+      this.fileManager.appendData(this.contacts)
+        ? console.log("Data successfully stored in file.")
+        : console.log("Failed to store data in file.");
       return true;
     }
 
@@ -93,12 +94,30 @@ class Contact {
   }
 
   deleteByPhoneNo(phoneNo: string): boolean {
-    const phoneNoIndex = this.findPhoneNoIndex(phoneNo);
+    const phoneNoIndex: number = this.findPhoneNoIndex(phoneNo);
+    console.log("phoneNoIndex :: ", phoneNoIndex);
     return phoneNoIndex === -1
       ? false
-      : (this.contacts.splice(phoneNoIndex, 1), true);
+      : (this.contacts.splice(phoneNoIndex, 1),
+        this.fileManager.deleteByPhoneNoGivenIndex(
+          phoneNo,
+          String(phoneNoIndex)
+        ),
+        true);
   }
-
+  updateEmail(phoneNO: string, email: string): boolean {
+    try {
+      for (let index = 0; index < this.contacts.length; index++) {
+        if (this.contacts[index]["phoneNo"] === phoneNO) {
+          this.fileManager.updateEmail(phoneNO, email);
+          return true;
+        }
+      }
+      return false;
+    } catch (err: any) {
+      return false;
+    }
+  }
   deleteByEmail(email: string): boolean {
     let emailIndex = this.findEmailIndex(email);
     return emailIndex === -1
@@ -120,23 +139,22 @@ class Contact {
   }
 }
 
-let contactApp = new Contact("file1.json");
+let fileName: allowedFileTypes = "data.json";
+let contactApp = new Contact(fileName);
 
-console.log(
-  contactApp.addContact({
-    name: "Nafay1",
-    phoneNo: "1111",
-    email: "nafay1@gmail.com",
-    address: "1Mianwali1",
-    password: "1password1",
-  })
-);
-console.log(
-  contactApp.addContact({
-    name: "Nafay2",
-    phoneNo: "22222",
-    email: "nafay2@gmail.com",
-    address: "2Mianwali2",
-    password: "2password2",
-  })
-);
+contactApp.addContact({
+  name: "Nafay1",
+  phoneNo: "1111",
+  email: "nafay1@gmail.com",
+  address: "1Mianwali1",
+  password: "1password1",
+});
+
+contactApp.addContact({
+  name: "Nafay2",
+  phoneNo: "22222",
+  email: "nafay2@gmail.com",
+  address: "2Mianwali2",
+  password: "2password2",
+});
+contactApp.updateEmail("222922", "nafay2@gmail.com");

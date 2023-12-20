@@ -2,13 +2,22 @@ import * as fs from "fs";
 import * as path from "path";
 
 type allowedFileTypes = `${string}.json`;
-
+interface contactInterface {
+  name: string;
+  phoneNo: string;
+  email?: string;
+  address?: string;
+  password?: string;
+}
+interface DataObject {
+  [key: string]: contactInterface;
+}
 export class FileManager {
   fileName: string = "";
   constructor(fileName: allowedFileTypes) {
     this.fileName = fileName;
   }
-  loadData(): object {
+  loadData(): DataObject {
     try {
       const fileContent = fs.readFileSync(
         path.join(__dirname, this.fileName),
@@ -55,6 +64,36 @@ export class FileManager {
       console.log(err.message);
       return false;
     }
+  }
+  deleteByPhoneNo(phoneNo: string): boolean {
+    const data: DataObject = this.loadData();
+    for (let objKey of Object.keys(data)) {
+      if (data[objKey]["phoneNo"] === phoneNo) {
+        delete data[objKey];
+        break;
+      }
+    }
+    this.writeData(data);
+    return true;
+  }
+
+  updateEmail(phoneNo: string, email: string): boolean {
+    const data: DataObject = this.loadData();
+    for (let objKey of Object.keys(data)) {
+      if (data[objKey]["phoneNo"] === phoneNo) {
+        data[objKey]["email"] = email;
+        break;
+      }
+    }
+    this.writeData(data);
+    return true;
+  }
+
+  deleteByPhoneNoGivenIndex(phoneNo: string, index: string): boolean {
+    const data: DataObject = this.loadData();
+    delete data[index];
+    this.writeData(data);
+    return true;
   }
 }
 
