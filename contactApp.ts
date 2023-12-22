@@ -1,27 +1,17 @@
-type contactType = {
-  name: string[];
-  phoneNo: string[];
-  email: (string | undefined)[];
-  address: (string | undefined)[];
-  password: (string | undefined)[];
-};
-interface contactInterface {
-  name: string;
-  phoneNo: string;
-  email?: string;
-  address?: string;
-  password?: string;
-}
-type keyType = "phoneNo" | "email";
-type allowedFileTypes = `${string}.json`;
-
+import * as path from "path";
+import {
+  contactInterface,
+  keyType,
+  allowedFileTypes,
+  DataObject,
+} from "./customInterfacesAndTypes";
 import { FileManager } from "./fileManager";
 
 class Contact {
   private contacts: contactInterface[] = [];
-  private fileManager: FileManager;
-  constructor(fileName: allowedFileTypes) {
-    this.fileManager = new FileManager(fileName);
+  private fileManager: FileManager<DataObject>;
+  constructor(fileManager: FileManager<DataObject>) {
+    this.fileManager = fileManager;
     let backupData = this.fileManager.loadData();
     let backUpDataValues = Object.values(backupData);
 
@@ -45,6 +35,15 @@ class Contact {
     }
     return -1;
   }
+  private transformData(data: contactInterface[]): DataObject {
+    return data.reduce<{ [key: string]: contactInterface }>(
+      (acc, current, index) => {
+        acc[index.toString()] = current;
+        return acc;
+      },
+      {}
+    );
+  }
   private findEmailOrPhoneNoIndex(key: string): number {
     for (let index = 0; index < this.contacts.length; index++) {
       if (
@@ -64,7 +63,13 @@ class Contact {
     let phoneNoIndex: number = this.findPhoneNoIndex(contact.phoneNo);
     if (phoneNoIndex === -1 && emailIndex === -1) {
       this.contacts.push(contact);
-      this.fileManager.appendData(this.contacts)
+      let parsedObj: DataObject = this.contacts.reduce<{
+        [key: string]: contactInterface;
+      }>((acc, current, index) => {
+        acc[index.toString()] = current;
+        return acc;
+      }, {});
+      this.fileManager.writeData(parsedObj)
         ? console.log("Data successfully stored in file.")
         : console.log("Failed to store data in file.");
       return true;
@@ -86,12 +91,12 @@ class Contact {
     let emailIndex = this.findEmailIndex(email);
     return emailIndex > -1 ? this.contacts[emailIndex] : null;
   }
-  delete(key: string): boolean {
-    const indexToDelete = this.contacts.findIndex(
-      (contact) => contact.email === key || contact.phoneNo === key
-    );
-    return this.contacts.splice(indexToDelete, 1).length > 0;
-  }
+  // delete(key: string): boolean {
+  //   const indexToDelete = this.contacts.findIndex(
+  //     (contact) => contact.email === key || contact.phoneNo === key
+  //   );
+  //   return this.contacts.splice(indexToDelete, 1).length > 0;
+  // }
 
   deleteByPhoneNo(phoneNo: string): boolean {
     const phoneNoIndex: number = this.findPhoneNoIndex(phoneNo);
@@ -99,17 +104,15 @@ class Contact {
     return phoneNoIndex === -1
       ? false
       : (this.contacts.splice(phoneNoIndex, 1),
-        this.fileManager.deleteByPhoneNoGivenIndex(
-          phoneNo,
-          String(phoneNoIndex)
-        ),
+        this.fileManager.writeData(this.transformData(this.contacts)),
         true);
   }
   updateEmail(phoneNO: string, email: string): boolean {
     try {
       for (let index = 0; index < this.contacts.length; index++) {
         if (this.contacts[index]["phoneNo"] === phoneNO) {
-          this.fileManager.updateEmail(phoneNO, email);
+          this.contacts[index]["email"] = email;
+          this.fileManager.writeData(this.transformData(this.contacts));
           return true;
         }
       }
@@ -122,7 +125,10 @@ class Contact {
     let emailIndex = this.findEmailIndex(email);
     return emailIndex === -1
       ? false
-      : (this.contacts.splice(emailIndex, 1), true);
+      : (this.fileManager.writeData(
+          this.transformData(this.contacts.splice(emailIndex, 1))
+        ),
+        true);
   }
   find(key: keyType, value: string): contactInterface | null {
     const allowedKeyValues: keyType[] = ["email", "phoneNo"];
@@ -140,7 +146,10 @@ class Contact {
 }
 
 let fileName: allowedFileTypes = "data.json";
-let contactApp = new Contact(fileName);
+let filePath: string = path.join(__dirname, fileName);
+let fileManager = new FileManager<DataObject>(filePath);
+
+let contactApp = new Contact(fileManager);
 
 contactApp.addContact({
   name: "Nafay1",
@@ -157,4 +166,4 @@ contactApp.addContact({
   address: "2Mianwali2",
   password: "2password2",
 });
-contactApp.updateEmail("222922", "nafay2@gmail.com");
+contactApp.updateEmail("22222", "nafay2kk@gmail.com");
