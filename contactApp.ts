@@ -16,7 +16,7 @@ class Contact {
     let backUpDataValues = Object.values(backupData);
 
     for (let value of backUpDataValues) [this.contacts.push(value)];
-    console.log("contacts from file\n", this.contacts);
+    console.log("Initial Contacts\n", this.contacts);
   }
 
   private findEmailIndex(key: string): number {
@@ -43,17 +43,6 @@ class Contact {
       },
       {}
     );
-  }
-  private findEmailOrPhoneNoIndex(key: string): number {
-    for (let index = 0; index < this.contacts.length; index++) {
-      if (
-        this.contacts[index].phoneNo === key ||
-        this.contacts[index].email === key
-      ) {
-        return index;
-      }
-    }
-    return -1;
   }
 
   addContact(contact: contactInterface): boolean {
@@ -91,16 +80,17 @@ class Contact {
     let emailIndex = this.findEmailIndex(email);
     return emailIndex > -1 ? this.contacts[emailIndex] : null;
   }
-  // delete(key: string): boolean {
-  //   const indexToDelete = this.contacts.findIndex(
-  //     (contact) => contact.email === key || contact.phoneNo === key
-  //   );
-  //   return this.contacts.splice(indexToDelete, 1).length > 0;
-  // }
+  deleteByEmail(email: string): boolean {
+    const emailIndex: number = this.findEmailIndex(email);
+    return emailIndex === -1
+      ? false
+      : (this.contacts.splice(emailIndex, 1),
+        this.fileManager.writeData(this.transformData(this.contacts)),
+        true);
+  }
 
   deleteByPhoneNo(phoneNo: string): boolean {
     const phoneNoIndex: number = this.findPhoneNoIndex(phoneNo);
-    console.log("phoneNoIndex :: ", phoneNoIndex);
     return phoneNoIndex === -1
       ? false
       : (this.contacts.splice(phoneNoIndex, 1),
@@ -121,15 +111,7 @@ class Contact {
       return false;
     }
   }
-  deleteByEmail(email: string): boolean {
-    let emailIndex = this.findEmailIndex(email);
-    return emailIndex === -1
-      ? false
-      : (this.fileManager.writeData(
-          this.transformData(this.contacts.splice(emailIndex, 1))
-        ),
-        true);
-  }
+
   find(key: keyType, value: string): contactInterface | null {
     const allowedKeyValues: keyType[] = ["email", "phoneNo"];
     for (let allowedKey of allowedKeyValues) {
@@ -152,18 +134,17 @@ let fileManager = new FileManager<DataObject>(filePath);
 let contactApp = new Contact(fileManager);
 
 contactApp.addContact({
-  name: "Nafay1",
-  phoneNo: "1111",
-  email: "nafay1@gmail.com",
-  address: "1Mianwali1",
-  password: "1password1",
+  name: "Davis",
+  phoneNo: "082111111111",
+  email: "david@gmail.com",
+  address: "NewYork, USA",
+  password: "davidpassword",
 });
 
 contactApp.addContact({
-  name: "Nafay2",
-  phoneNo: "22222",
-  email: "nafay2@gmail.com",
-  address: "2Mianwali2",
-  password: "2password2",
+  name: "paris",
+  phoneNo: "082333333333",
+  email: "paris@gmail.com",
+  address: "Washington DC",
+  password: "parispassword",
 });
-contactApp.updateEmail("22222", "nafay2kk@gmail.com");
