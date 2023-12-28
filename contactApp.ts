@@ -141,7 +141,7 @@ class Model {
 }
 
 (async () => {
-  let dbClient: Client;
+  let dbClient: Client | null = null;
   try {
     dbClient = await connectDB();
     console.error("DB connection successful");
@@ -188,7 +188,9 @@ class Model {
   } catch (error) {
     console.error("Error:", error);
   } finally {
-    // Ensure to disconnect from the database after the operation
-    // await closeDB(dbClient);
+    if (dbClient) {
+      await closeDB(dbClient);
+      console.log("Disconnected from DB");
+    }
   }
 })();
