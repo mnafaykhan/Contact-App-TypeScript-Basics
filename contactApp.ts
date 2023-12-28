@@ -1,32 +1,28 @@
+// 1. insertOne -> phone book.      2. insertMany         3. deleteOne
+// 4. deleteMany   5. updateOne   6. updateMany    7. getOne   8. getMany
+
 import { Client } from "pg";
 import { connectDB, closeDB } from "./dbConnection";
-import { PhoneBook } from "./customInterfacesAndTypes";
+import {
+  PhoneBook,
+  keyType,
+  UpdateRecord,
+  PhoneBookFieldNames,
+} from "./customInterfacesAndTypes";
+const fieldNames: PhoneBookFieldNames[] = [
+  "email",
+  "phoneNo",
+  "address",
+  "name",
+  "password",
+];
 class Model {
-  private dbClient!: Client | null;
+  private dbClient!: Client;
 
-  constructor() {
-    this.dbClient = null;
+  constructor(client: Client) {
+    this.dbClient = client;
   }
 
-  async connect(): Promise<void> {
-    try {
-      this.dbClient = await connectDB();
-      console.log("Connected to the database");
-    } catch (err) {
-      console.log("Failure in database connection!\n", err);
-    }
-  }
-
-  async disconnect(): Promise<void> {
-    try {
-      if (this.dbClient) {
-        await closeDB(this.dbClient);
-        console.log("Disconnected from the database");
-      }
-    } catch (error) {
-      console.error("Error closing the database connection:", error);
-    }
-  }
   async insertOne(contact: PhoneBook): Promise<void> {
     try {
       if (this.dbClient) {
@@ -44,25 +40,130 @@ class Model {
       console.error("Error inserting contact:", error);
     }
   }
+
+  async deleteOne(key: keyType, value: string): Promise<void> {
+    try {
+      if (this.dbClient) {
+        const query = `DELETE FROM contacts WHERE ${key} = '${value}'`;
+
+        const result = await this.dbClient.query(query);
+        console.log(`Total deleted contacts: ${result.rowCount}`);
+      }
+    } catch (error) {
+      console.error("Error deleting contact:", error);
+    }
+  }
+  async getOne(key: keyType, value: string): Promise<void> {
+    try {
+      if (this.dbClient) {
+        const query = `Select * FROM contacts WHERE ${key} = '${value}'`;
+
+        const result = await this.dbClient.query(query);
+        console.log(result.rows[0])
+      }
+    } catch (error) {
+      console.error("Error deleting contact:", error);
+    }
+  }
+
+  async getMany(key: PhoneBookFieldNames, value: string): Promise<void> {
+    try {
+      if (this.dbClient) {
+        const query = `Select * FROM contacts WHERE ${key} LIKE '%${value}%'`;
+
+        const result = await this.dbClient.query(query);
+        console.log(result.rows)
+      }
+    } catch (error) {
+      console.error("Error deleting contact:", error);
+    }
+  }
+  async updateOne(
+    keyName: keyType,
+    keyvalue: string,
+    values: UpdateRecord
+  ): Promise<void> {
+    try {
+      if (this.dbClient) {
+        const columnsToUpdate = Object.keys(values)
+          .map(
+            (column) => `${column} = '${values[column as keyof UpdateRecord]}'`
+          )
+
+          .join(", ");
+
+        const query = `UPDATE contacts SET ${columnsToUpdate} WHERE ${keyName} = '${keyvalue}'`;
+
+        const result = await this.dbClient.query(query);
+
+        console.log(`Total updated contacts: ${result.rowCount}`);
+      }
+    } catch (error) {
+      console.error("Error updating contact:", error);
+    }
+  }
+  async insertMany(records: PhoneBook[]): Promise<void> {
+    try {
+      if (this.dbClient && records.length > 0) {
+        const columns = fieldNames.join(", ");
+
+        const values = records
+          .map((record) => {
+            const singleRecordValues = fieldNames
+              .map((value) =>
+                record[value] !== undefined ? `'${record[value]}'` : "NULL"
+              )
+              .join(", ");
+            return `(${singleRecordValues})`;
+          })
+          .join(", ");
+
+        const query = `INSERT INTO Contacts (${columns}) VALUES ${values}`;
+
+        const result = await this.dbClient.query(query);
+
+        console.log(`Total updated contacts: ${result.rowCount}`);
+      }
+    } catch (error) {
+      console.error("Error updating contact:", error);
+    }
+  }
 }
 
 (async () => {
-  const myModel = new Model();
-
+  let dbClient: Client;
   try {
-    await myModel.connect();
+    dbClient = await connectDB();
+    console.error("DB connection successful");
 
-    await myModel.insertOne({
-      name: "John Doe",
-      phoneNo: "1234567890",
-      email: "john.doe@example.com",
-      address: "123 Main St",
-      password: "securePassword",
-    });
+    const myModel = new Model(dbClient);
+
+    // await myModel.insertMany([
+    //   {
+    //     name: "nafay3",
+    //     phoneNo: "nafay3phoneNo",
+    //     email: "nafay3@gmail.com",
+    //     address: "nafay3 home",
+    //     password: "nafay3Password",
+    //   },
+    //   {
+    //     name: "nafay4",
+    //     phoneNo: "nafay4phoneNo",
+    //     email: "nafay4@gmail.com",
+    //     address: "nafay4 home",
+    //     password: "nafay4Password",
+    //   },
+    // ]);
+
+    await myModel.getMany("email", "@gmail.com");
+    // await myModel.deleteOne("email", "nafay1@gmail.com");
+    // await myModel.updateOne("email", "nafay2@gmail.com", {
+    //   name: "nafay2",
+    // });
   } catch (error) {
     console.error("Error:", error);
   } finally {
     // Ensure to disconnect from the database after the operation
-    await myModel.disconnect();
+    // await closeDB(dbClient);
   }
 })();
