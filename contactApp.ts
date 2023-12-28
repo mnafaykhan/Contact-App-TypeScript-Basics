@@ -1,6 +1,3 @@
-// 1. insertOne -> phone book.      2. insertMany         3. deleteOne
-// 4. deleteMany   5. updateOne   6. updateMany    7. getOne   8. getMany
-
 import { Client } from "pg";
 import { connectDB, closeDB } from "./dbConnection";
 import {
@@ -59,7 +56,7 @@ class Model {
         const query = `Select * FROM contacts WHERE ${key} = '${value}'`;
 
         const result = await this.dbClient.query(query);
-        console.log(result.rows[0])
+        console.log(result.rows[0]);
       }
     } catch (error) {
       console.error("Error deleting contact:", error);
@@ -72,7 +69,20 @@ class Model {
         const query = `Select * FROM contacts WHERE ${key} LIKE '%${value}%'`;
 
         const result = await this.dbClient.query(query);
-        console.log(result.rows)
+        console.log(result.rows);
+      }
+    } catch (error) {
+      console.error("Error deleting contact:", error);
+    }
+  }
+  async deleteMany(key: PhoneBookFieldNames, value: string): Promise<void> {
+    try {
+      if (this.dbClient) {
+        const query = `DELETE FROM contacts WHERE ${key} LIKE '%${value}%'`;
+
+        const result = await this.dbClient.query(query);
+
+        console.log(`Deleted ${result.rowCount} contacts successfully`);
       }
     } catch (error) {
       console.error("Error deleting contact:", error);
@@ -137,8 +147,21 @@ class Model {
     console.error("DB connection successful");
 
     const myModel = new Model(dbClient);
-
+    // await myModel.insertOne({
+    //   name: "nafay1",
+    //   phoneNo: "nafay1phoneNo",
+    //   email: "nafay1@gmail.com",
+    //   address: "nafay1 home",
+    //   password: "nafay1Password",
+    // });
     // await myModel.insertMany([
+    //   {
+    //     name: "nafay2",
+    //     phoneNo: "nafay2phoneNo",
+    //     email: "nafay2@gmail.com",
+    //     address: "nafay2 home",
+    //     password: "nafay2Password",
+    //   },
     //   {
     //     name: "nafay3",
     //     phoneNo: "nafay3phoneNo",
@@ -155,8 +178,10 @@ class Model {
     //   },
     // ]);
 
-    await myModel.getMany("email", "@gmail.com");
     // await myModel.deleteOne("email", "nafay1@gmail.com");
+    // await myModel.deleteMany("name", "fa");
+    // await myModel.getMany("email", "@gmail.com");
+    // await myModel.getOne("email", "nafay1@gmail.com");
     // await myModel.updateOne("email", "nafay2@gmail.com", {
     //   name: "nafay2",
     // });
