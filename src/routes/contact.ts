@@ -1,9 +1,7 @@
 import express, { Express, Request, Response, Router } from "express";
 import { contactController } from "./../controller";
+
 const router: Router = express.Router();
-
-
-
 
 router.get("/getOne", contactController.getOne);
 router.get("/getMany", contactController.getMany);
